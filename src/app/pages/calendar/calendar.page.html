@@ -1,0 +1,46 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Calendario de Recordatorios</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Selector de fecha -->
+  <ion-item>
+
+    <ion-datetime 
+      presentation="date" 
+      [(ngModel)]="selectedDate" 
+      (ionChange)="onDateChange($event)"
+      [showDefaultButtons]="true">
+    </ion-datetime>
+  </ion-item>
+
+  <!-- Lista de recordatorios -->
+  <div class="reminders-container">
+    <ion-list *ngIf="reminders.length > 0">
+      <ion-list-header>
+        <ion-label>Recordatorios para {{selectedDate | date:'dd/MM/yyyy'}}</ion-label>
+      </ion-list-header>
+      
+      <ion-item *ngFor="let reminder of reminders">
+        <ion-label>
+          <h2>{{reminder.title}}</h2>
+          <p>{{reminder.description}}</p>
+          <p>{{reminder.date.toDate() | date:'HH:mm'}}</p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+
+    <div *ngIf="reminders.length === 0" class="no-reminders">
+      <p>No hay recordatorios para esta fecha</p>
+    </div>
+  </div>
+
+  <!-- Botón para agregar recordatorio -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="addNewReminder()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

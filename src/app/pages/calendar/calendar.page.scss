@@ -1,0 +1,18 @@
+.reminders-container {
+    margin-top: 20px;
+  }
+  
+  .no-reminders {
+    text-align: center;
+    margin-top: 40px;
+    color: var(--ion-color-medium);
+  }
+  
+  ion-datetime {
+    width: 100%;
+  }
+  
+  ion-list-header {
+    font-weight: bold;
+    font-size: 1.1em;
+  }
