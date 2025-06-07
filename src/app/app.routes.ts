@@ -18,22 +18,38 @@ export const routes: Routes = [
   {
     path: 'home',
     loadComponent: () => import('./pages/home/home.page').then(m => m.HomePage),
-    canActivate: [authGuard]
+ 
   },
   {
     path: 'perfil',
-    loadComponent: () => import('./pages/perfil/perfil.page').then(m => m.PerfilPage)
+    loadComponent: () => import('./pages/perfil/perfil.page').then(m => m.PerfilPage),
+    canActivate: [authGuard],
+    data:{role:'owner'}
   },
   {
     path: 'petfile',
-    loadComponent: () => import('./pages/petfile/petfile.page').then(m => m.PetfilePage)
+    loadComponent: () => import('./pages/petfile/petfile.page').then(m => m.PetfilePage),
+    canActivate: [authGuard],
+
   },
   {
     path: 'calendar',
-    loadComponent: () => import('./pages/calendar/calendar.page').then(m => m.CalendarPage)
+    loadComponent: () => import('./pages/calendar/calendar.page').then(m => m.CalendarPage),
+    canActivate: [authGuard],
+
   },
+  {
+    path: 'veterinarios',
+    loadComponent: () => import('./pages/veterinarios/veterinarios.page').then( m => m.VeterinariosPage)
+  },
+
+
+
+  
   {
     path: '**',
     redirectTo: 'login'
-  }
+  },
+  
+
 ];

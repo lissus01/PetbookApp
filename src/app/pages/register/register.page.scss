@@ -1,28 +1,17 @@
-/* src/app/pages/register/register.page.scss */
-ion-card {
-    max-width: 500px;
-    margin: 20px auto;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    border-radius: 10px;
-  }
+.error-message {
+  color: var(--ion-color-danger);
+  font-size: 0.8rem;
+  padding-left: 16px;
+  padding-top: 5px;
+}
+
+.login-link {
+  text-align: center;
+  margin-top: 20px;
   
-  ion-card-title {
-    font-size: 24px;
-    font-weight: bold;
+  a {
     color: var(--ion-color-primary);
+    cursor: pointer;
+    text-decoration: none;
   }
-  
-  .error-message {
-    color: var(--ion-color-danger);
-    font-size: 14px;
-    margin-bottom: 10px;
-  }
-  
-  ion-button {
-    --border-radius: 6px;
-    font-weight: 600;
-  }
-  
-  ion-label {
-    font-weight: 500;
-  }
+}

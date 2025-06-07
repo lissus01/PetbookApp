@@ -10,6 +10,7 @@ import { logOutOutline, personCircleOutline } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
+import { doc, getDoc, getFirestore } from 'firebase/firestore';
 
 @Component({
   selector: 'app-home',
@@ -25,7 +26,8 @@ import { RouterModule } from '@angular/router';
 })
 export class HomePage implements OnInit {
   userEmail: string | null = null;
-  
+  userRole: string | null = null;
+  userName: string | null= null;
   private authService = inject(AuthService);
   private router = inject(Router);
 
@@ -33,10 +35,25 @@ export class HomePage implements OnInit {
     addIcons({ logOutOutline, personCircleOutline });
   }
 
-  ngOnInit() {
+  async ngOnInit() {
     const user = this.authService.getCurrentUser();
     if (user) {
       this.userEmail = user.email;
+   
+    }
+    if (user){
+      if (user) {
+      const db = getFirestore();
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      this.userRole = userDoc.data()?.['role'] || null;
+    }
+    }
+    if (user){
+      if (user) {
+      const db = getFirestore();
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      this.userName = userDoc.data()?.['name'] || null;
+    }
     }
   }
 
