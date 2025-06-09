@@ -1,0 +1,43 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Chatbot</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list>
+    <ion-item *ngFor="let message of messages">
+      <ion-label [class.user-message]="message.isUser" [class.bot-message]="!message.isUser">
+        {{ message.text }}
+      </ion-label>
+    </ion-item>
+  </ion-list>
+
+  <!-- Sección de Preguntas Frecuentes -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Preguntas Frecuentes</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-button *ngFor="let option of predefinedOptions"
+                  expand="block"
+                  fill="outline"
+                  size="small"
+                  class="faq-button"
+                  (click)="selectQuestion(option.question)">
+        {{ option.question }}
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-item>
+      <ion-input [(ngModel)]="userInput" placeholder="Escribe tu mensaje..." (keyup.enter)="sendMessage()"></ion-input>
+      <ion-button slot="end" (click)="sendMessage()">
+        <ion-icon name="send"></ion-icon>
+      </ion-button>
+    </ion-item>
+  </ion-toolbar>
+</ion-footer>
