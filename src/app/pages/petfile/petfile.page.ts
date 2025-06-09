@@ -122,6 +122,7 @@ export class PetfilePage implements OnInit, OnDestroy {
       });
       this.selectedPhoto = null;
     }
+    this.petForm.markAsDirty();
   }
 
   async submitForm() {
