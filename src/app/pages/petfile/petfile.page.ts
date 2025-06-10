@@ -112,9 +112,9 @@ export class PetfilePage implements OnInit, OnDestroy {
         weight: pet.weight,
         chipId: pet.chipId
       });
-       if (pet.photoLocalPath) {
+       if (pet.photoUrl) {
         try {
-          this.selectedPhoto = await this.loadLocalImage(pet.photoLocalPath);
+          this.selectedPhoto = await this.loadLocalImage(pet.photoUrl);
         } catch (error) {
           console.error('Error loading pet image:', error);
           this.selectedPhoto = 'assets/images/default-pet.png';
