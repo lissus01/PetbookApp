@@ -1,15 +1,15 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule, ToastController, AlertController, LoadingController } from '@ionic/angular';
+import { IonicModule, ToastController, AlertController, LoadingController, ModalController } from '@ionic/angular';
 import { Firestore, collection, collectionData, doc, addDoc, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Storage, ref, uploadBytes, getDownloadURL } from '@angular/fire/storage';
 import { FormsModule } from '@angular/forms';
 import { Capacitor } from '@capacitor/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
-
-
-
+import { addIcons } from 'ionicons';
+import { add, camera, close, medical, paw, pencil, save, trash } from 'ionicons/icons';
+import { EspecialidadesModalComponent } from 'src/app/components/especialidades-modal/especialidades-modal.component';
 @Component({
   selector: 'app-veterinarios',
   templateUrl: './veterinarios.page.html',
@@ -17,16 +17,27 @@ import { Directory, Filesystem } from '@capacitor/filesystem';
   standalone: true,
   imports: [IonicModule, CommonModule, FormsModule,]
 })
+
 export class VeterinariosPage {
-  constructor(private alertController: AlertController, private toastController: ToastController, private loadingController: LoadingController) {
+  constructor(private alertController: AlertController, private toastController: ToastController, private loadingController: LoadingController, private modalCtrl: ModalController,
+  ) {
+    addIcons({ medical, pencil, trash, paw, add, close, camera, save });
     this.loadVeterinarios();
+
   }
+  diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes',];
+  diaSeleccionado: string = this.diasSemana[0]; // Día inicial seleccionado
+  veterinariosFiltrados: any[] = []
+
   private firestore: Firestore = inject(Firestore);
   private storage: Storage = inject(Storage);
+
   isModalOpen = false;
   showActionSheet = false;
 
   veterinarios: any[] = [];
+  especialidades: any[] = [];
+
   nuevoVeterinario: any = {
     nombre: '',
     especialidad: '',
@@ -34,19 +45,94 @@ export class VeterinariosPage {
     diasLaborales: [],
     disponible: true
   };
+
   editMode = false;
   editingId: string | null = null;
-  diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+  async ngOnInit() {
+    await this.loadEspecialidades(); // Cargar especialidades al iniciar
+  }
+
+  async loadEspecialidades() {
+    try {
+      const especialidadesRef = collection(this.firestore, 'especialidades');
+      collectionData(especialidadesRef, { idField: 'id' }).subscribe({
+        next: (data) => {
+          // ORDENAMIENTO ALFABÉTICO AQUÍ
+          this.especialidades = data.sort((a, b) => a['nombre'].localeCompare(b['nombre']));
+        },
+        error: async (err) => {
+          console.error('Error al cargar especialidades:', err);
+          const toast = await this.toastController.create({
+            message: 'Error al cargar especialidades',
+            duration: 2000,
+            color: 'danger'
+          });
+          await toast.present();
+        }
+      });
+    } catch (error) {
+      console.error('Error inesperado:', error);
+    }
+  }
+
   async loadVeterinarios() {
     const veterinariosRef = collection(this.firestore, 'veterinarios');
     collectionData(veterinariosRef, { idField: 'id' }).subscribe((data) => {
       this.veterinarios = data;
+      this.filtrarVeterinarios(); // Filtramos los veterinarios al cargarlos
+
     });
   }
 
+  filtrarVeterinarios() {
+    if (!this.diaSeleccionado) return;
+
+    this.veterinariosFiltrados = this.veterinarios.filter(vet => {
+      return this.trabajaEsteDia(vet, this.diaSeleccionado);
+    });
+  }
+
+  // Método auxiliar para verificar si trabaja un día
+  trabajaEsteDia(veterinario: any, dia: string): boolean {
+    if (!veterinario.diasLaborales) return false;
+
+    // Si es array
+    if (Array.isArray(veterinario.diasLaborales)) {
+      return veterinario.diasLaborales.includes(dia);
+    }
+
+    // Si es objeto (del formulario)
+    if (typeof veterinario.diasLaborales === 'object') {
+      return !!veterinario.diasLaborales[dia];
+    }
+
+    return false;
+  }
+
+  // Método para mostrar por día en la vista
+  mostrarVeterinariosDia(dia: string): any[] {
+    return this.veterinarios.filter(vet => this.trabajaEsteDia(vet, dia));
+  }
+
+  // Método para abreviar días
+  obtenerAbreviaturaDia(dia: string): string {
+    return dia.substring(0, 3);
+  }
+
   async agregarVeterinario() {
+    // Convierte días laborales a array
+    const diasArray = this.diasSemana.filter(dia =>
+      this.nuevoVeterinario.diasLaborales[dia]
+    );
+
+    const veterinarioParaGuardar = {
+      ...this.nuevoVeterinario,
+      diasLaborales: diasArray
+    };
+
     const veterinariosRef = collection(this.firestore, 'veterinarios');
-    await addDoc(veterinariosRef, this.nuevoVeterinario);
+    await addDoc(veterinariosRef, veterinarioParaGuardar);
     this.resetForm();
     this.isModalOpen = false;
   }
@@ -54,11 +140,28 @@ export class VeterinariosPage {
   async actualizarVeterinario() {
     if (!this.editingId) return;
 
+    // Convierte los días laborales a array si es necesario
+    const veterinarioParaActualizar = {
+      ...this.nuevoVeterinario,
+      diasLaborales: this.convertirDiasLaborales(this.nuevoVeterinario.diasLaborales)
+    };
+
     const veterinarioRef = doc(this.firestore, 'veterinarios', this.editingId);
-    await updateDoc(veterinarioRef, this.nuevoVeterinario);
+    await updateDoc(veterinarioRef, veterinarioParaActualizar);
 
     this.resetForm();
     this.isModalOpen = false;
+  }
+  private convertirDiasLaborales(dias: any): string[] {
+    if (Array.isArray(dias)) {
+      return dias;
+    }
+    // Si es un objeto (del formulario), convertirlo a array
+    if (typeof dias === 'object' && dias !== null) {
+      return this.diasSemana.filter(dia => dias[dia]);
+    }
+    // Si no es ni array ni objeto, devolver array vacío
+    return [];
   }
 
   async eliminarVeterinario(id: string) {
@@ -159,7 +262,7 @@ export class VeterinariosPage {
     this.editingId = veterinario.id;
     this.nuevoVeterinario = {
       ...veterinario,
-      diasLaborales: this.convertirArrayDias(veterinario.diasLaborales)
+      diasLaborales: this.convertirObjetoDias(veterinario.diasLaborales)
     };
     this.isModalOpen = true;
   }
@@ -168,19 +271,19 @@ export class VeterinariosPage {
     this.isModalOpen = false;
     this.resetForm();
   }
+  // Convertir objeto de días a array para Firestore
+  private convertirObjetoDias(dias: any): any {
+    // Si ya es el formato de objeto que necesitamos (del formulario)
+    if (typeof dias === 'object' && !Array.isArray(dias)) {
+      return dias;
+    }
 
-  // Convertir array de días a objeto para los checkboxes
-  private convertirArrayDias(diasArray: string[]): any {
+    // Si es un array, convertirlo al formato del formulario
     const diasObj: any = {};
     this.diasSemana.forEach(dia => {
-      diasObj[dia] = diasArray.includes(dia);
+      diasObj[dia] = Array.isArray(dias) ? dias.includes(dia) : false;
     });
     return diasObj;
-  }
-
-  // Convertir objeto de días a array para Firestore
-  private convertirObjetoDias(diasObj: any): string[] {
-    return this.diasSemana.filter(dia => diasObj[dia]);
   }
 
   // Método para seleccionar fuente de foto
@@ -252,5 +355,14 @@ export class VeterinariosPage {
     } else {
       return filePath; // Ya es un data URL en web
     }
+  }
+  async abrirModalEspecialidades() {
+    const modal = await this.modalCtrl.create({
+      component: EspecialidadesModalComponent,
+      componentProps: {},
+      cssClass: 'modal-fullscreen'
+    });
+
+    await modal.present();
   }
 }

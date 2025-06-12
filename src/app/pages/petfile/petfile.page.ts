@@ -1,28 +1,41 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormBuilder, Validators } from '@angular/forms';
-import { IonicModule, AlertController, ActionSheetController, ModalController,ToastController } from '@ionic/angular';
-import { Firestore, collection, addDoc, query, where, getDocs, doc, updateDoc, deleteDoc, FirestoreModule } from '@angular/fire/firestore';
+import { IonicModule, AlertController, ActionSheetController, ModalController, ToastController } from '@ionic/angular';
+import { Firestore, collection, addDoc, query, where, getDocs, doc, updateDoc, deleteDoc, FirestoreModule, collectionData } from '@angular/fire/firestore';
 import { Auth } from '@angular/fire/auth';
 import { authState } from 'rxfire/auth';
-import { Storage, ref, uploadBytes, getDownloadURL, deleteObject, StorageModule } from '@angular/fire/storage';
+import { Storage, ref, deleteObject, StorageModule } from '@angular/fire/storage';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { AngularFireStorageModule } from '@angular/fire/compat/storage';
 import { Subscription } from 'rxjs';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
-
+import { SpeciesBreedManagementComponent } from 'src/app/components/species-breed-management/species-breed-management.component';
+import { addIcons } from 'ionicons';
+import { add, camera, close, create, paw, trash, } from 'ionicons/icons';
 interface Pet {
   id?: string;
   name: string;
   nickname: string;
   age: number;
+  species: string;
   breed: string;
   weight: number;
   chipId: string;
   photoLocalPath: string;
   photoUrl?: string;
   userId: string;
+}
+interface Species {
+  id?: string;
+  name: string;
+}
+
+interface Breed {
+  id?: string;
+  name: string;
+  speciesId: string;
 }
 
 @Component({
@@ -41,6 +54,9 @@ export class PetfilePage implements OnInit, OnDestroy {
   selectedPhoto: string | null = null;
   showPetDetail: boolean = false;
   selectedPet: Pet | null = null;
+  species: Species[] = [];
+  breeds: Breed[] = [];
+  filteredBreeds: Breed[] = [];
   private authSub: Subscription | undefined;
 
   constructor(
@@ -52,26 +68,35 @@ export class PetfilePage implements OnInit, OnDestroy {
     private actionSheetCtrl: ActionSheetController,
     private modalCtrl: ModalController,
     private toastCtrl: ToastController,
-  ) {
+    ) 
+    {
     this.petForm = this.formBuilder.group({
       name: ['', Validators.required],
       nickname: [''],
       age: [0, [Validators.required, Validators.min(0), Validators.max(30)]],
-      breed: ['', Validators.required],
+      species: ['', Validators.required],
+      breed: ['',],
       weight: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
-      chipId: ['']
+      chipId: ['', [Validators.required]]
+      
     });
-  }
+    addIcons({ paw, add, close,create, trash, camera});
+    }
 
   ngOnInit() {
     this.authSub = authState(this.auth).subscribe(user => {
       if (user) {
         this.userUid = user.uid;
+        this.loadSpecies();
+        this.loadBreeds();
         this.loadPets();
       } else {
         this.userUid = null;
         this.pets = [];
+        this.species = [];
+        this.breeds = [];
       }
+
     });
   }
 
@@ -98,8 +123,75 @@ export class PetfilePage implements OnInit, OnDestroy {
       console.error('Error loading pets:', error);
     }
   }
+  async loadSpecies() {
+    try {
+      const q = query(collection(this.firestore, 'species'));
+      const querySnapshot = await getDocs(q);
+      this.species = [];
+      querySnapshot.forEach((doc) => {
+        this.species.push({
+          id: doc.id,
+          ...doc.data() as Species
+        });
+      });
+    } catch (error) {
+      console.error('Error loading species:', error);
+    }
+  }
+
+  async loadBreeds() {
+    try {
+      const q = query(collection(this.firestore, 'breeds'));
+      const querySnapshot = await getDocs(q);
+      this.breeds = [];
+      querySnapshot.forEach((doc) => {
+        this.breeds.push({
+          id: doc.id,
+          ...doc.data() as Breed
+        });
+      });
+    } catch (error) {
+      console.error('Error loading breeds:', error);
+    }
+  }
+  async loadSpeciesAndBreeds() {
+    try {
+      const [speciesSnapshot, breedsSnapshot] = await Promise.all([
+        getDocs(collection(this.firestore, 'species')),
+        getDocs(collection(this.firestore, 'breeds'))
+      ]);
+
+      this.species = speciesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data() as any
+      }));
+
+      this.breeds = breedsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data() as any
+      }));
+
+      console.log('Datos actualizados:', {
+        species: this.species,
+        breeds: this.breeds
+      });
+    } catch (error) {
+      console.error('Error loading data:', error);
+      const toast = await this.toastCtrl.create({
+        message: 'Error al cargar especies y razas',
+        duration: 2000,
+        color: 'danger'
+      });
+      await toast.present();
+    }
+  }
+
+  filterBreedsBySpecies(speciesId: string) {
+    this.filteredBreeds = this.breeds.filter(breed => breed.speciesId === speciesId);
+  }
 
   async openPetForm(pet: Pet | null = null) {
+    await this.loadSpeciesAndBreeds();
     this.showPetDetail = false;
     if (pet) {
       this.isEditing = true;
@@ -110,17 +202,19 @@ export class PetfilePage implements OnInit, OnDestroy {
         age: pet.age,
         breed: pet.breed,
         weight: pet.weight,
-        chipId: pet.chipId
+        chipId: pet.chipId,
+        species: pet.species,
       });
-       if (pet.photoUrl) {
+      this.filterBreedsBySpecies(pet.species);
+      if (pet.photoUrl) {
         try {
           this.selectedPhoto = await this.loadLocalImage(pet.photoUrl);
         } catch (error) {
           console.error('Error loading pet image:', error);
-          this.selectedPhoto = 'assets/images/default-pet.png';
+          this.selectedPhoto = 'https://ionicframework.com/docs/img/demos/thumbnail.svg';
         }
       } else {
-        this.selectedPhoto = 'assets/images/default-pet.png';
+        this.selectedPhoto = 'https://ionicframework.com/docs/img/demos/thumbnail.svg';
       }
     } else {
       this.isEditing = false;
@@ -129,10 +223,12 @@ export class PetfilePage implements OnInit, OnDestroy {
         name: '',
         nickname: '',
         age: 0,
+        species: '',
         breed: '',
         weight: 0,
         chipId: ''
       });
+      this.filteredBreeds = [];
       this.selectedPhoto = null;
     }
     this.petForm.markAsDirty();
@@ -144,7 +240,9 @@ export class PetfilePage implements OnInit, OnDestroy {
       const petData: Record<string, any> = {
         ...this.petForm.value,
         userId: this.userUid,
-        photoUrl: this.selectedPhoto || ''
+        photoUrl: this.selectedPhoto || '',
+        speciesName: this.species.find(s => s.id === this.petForm.value.species)?.name || '',
+        breedName: this.breeds.find(b => b.id === this.petForm.value.breed)?.name || ''
       };
 
       if (this.isEditing && this.currentPetId) {
@@ -208,37 +306,9 @@ export class PetfilePage implements OnInit, OnDestroy {
     }
   }
 
-  private async saveImageLocally(dataUrl: string | null): Promise<string> {
-    if (!dataUrl || dataUrl.includes('assets/images/')) {
-      return ''; // No guardar imágenes por defecto
-    }
-
-    try {
-      const fileName = `pet_${Date.now()}.jpeg`;
-      const base64Data = dataUrl.split(',')[1];
-
-      if (Capacitor.isNativePlatform()) {
-        const savedFile = await Filesystem.writeFile({
-          path: fileName,
-          data: base64Data,
-          directory: Directory.Data,
-          encoding: Encoding.UTF8 // Use the Encoding enum here
-        });
-        
-        return savedFile.uri;
-      } else {
-        // En navegadores, guardamos el data URL completo
-        return dataUrl;
-      }
-    } catch (error) {
-      console.error('Error saving image locally:', error);
-      throw error;
-    }
-}
-
   private async loadLocalImage(path: string): Promise<string> {
-    if (!path) return 'assets/images/default-pet.png';
-    
+    if (!path) return 'https://ionicframework.com/docs/img/demos/thumbnail.svg';
+
     if (path.startsWith('data:image')) {
       return path; // Ya es un data URL (para web)
     }
@@ -252,33 +322,23 @@ export class PetfilePage implements OnInit, OnDestroy {
         return `data:image/jpeg;base64,${file.data}`;
       } catch (error) {
         console.error('Error reading local image:', error);
-        return 'assets/images/default-pet.png';
+        return 'https://ionicframework.com/docs/img/demos/thumbnail.svg';
       }
     } else {
       return path; // En web, debería ser un data URL
     }
   }
-
-  private async deleteLocalImage(path: string): Promise<void> {
-    if (!path || path.includes('assets/images/')) return;
-
-    if (Capacitor.isNativePlatform()) {
-      try {
-        await Filesystem.deleteFile({
-          path: path,
-          directory: Directory.Data
-        });
-      } catch (error) {
-        console.error('Error deleting local image:', error);
-      }
-    }
-    // En web no necesitamos hacer nada especial
-  }
-
-
   viewPetDetail(pet: Pet) {
     this.selectedPet = pet;
     this.showPetDetail = true;
+  }
+  getSpeciesName(speciesId: string): string {
+    const species = this.species.find(s => s.id === speciesId);
+    return species ? species.name : 'Unknown';
+  }
+  getBreedName(BreedId: string): string {
+    const breed = this.breeds.find(s => s.id === BreedId);
+    return breed ? breed.name : 'Unknown';
   }
 
   closePetDetail() {
@@ -319,5 +379,20 @@ export class PetfilePage implements OnInit, OnDestroy {
     });
 
     await alert.present();
+  }
+  async openSpeciesBreedManagement() {
+    const modal = await this.modalCtrl.create({
+      component: SpeciesBreedManagementComponent,
+      componentProps: {
+        species: this.species
+      }
+    });
+    await modal.present();
+
+    const { data } = await modal.onWillDismiss();
+    if (data?.reload) {
+      this.loadSpecies();
+      this.loadBreeds();
+    }
   }
 }

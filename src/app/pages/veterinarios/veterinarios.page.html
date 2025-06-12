@@ -1,6 +1,6 @@
 <ion-header>
   <ion-toolbar color="primary">
-     <ion-buttons slot="start">
+    <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
     <ion-title>Gestión de Veterinarios</ion-title>
@@ -8,52 +8,72 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  <!-- Lista de veterinarios -->
-  <ion-list *ngIf="veterinarios.length > 0">
-    <ion-item-sliding *ngFor="let vet of veterinarios">
-      <ion-item>
-        <ion-avatar slot="start">
-          <img [src]="vet.foto || 'assets/images/default-avatar.png'" alt="Foto del veterinario" (error)="vet.foto = 'assets/images/default-avatar.png'">
-        </ion-avatar>
-        
-        <ion-label>
-          <h2>{{ vet.nombre }}</h2>
-          <p>{{ vet.especialidad }}</p>
-          <p>
-            <ion-chip *ngFor="let dia of vet.diasLaborales" color="primary" outline>
-              <ion-label>{{ dia }}</ion-label>
-            </ion-chip>
-          </p>
-          <ion-badge [color]="vet.disponible ? 'success' : 'danger'">
-            {{ vet.disponible ? 'Disponible' : 'No disponible' }}
-          </ion-badge>
-        </ion-label>
-        
-        <ion-toggle slot="end" [checked]="vet.disponible" 
-                   (ionChange)="actualizarDisponibilidad(vet.id, $event.detail.checked)"></ion-toggle>
-      </ion-item>
-      
-      <ion-item-options side="end">
-        <ion-item-option color="warning" (click)="abrirModalEdicion(vet)">
-          <ion-icon name="pencil" slot="icon-only"></ion-icon>
-        </ion-item-option>
-        <ion-item-option color="danger" (click)="confirmarEliminacion(vet)">
-          <ion-icon name="trash" slot="icon-only"></ion-icon>
-        </ion-item-option>
-      </ion-item-options>
-    </ion-item-sliding>
-  </ion-list>
 
-  <!-- Mensaje cuando no hay veterinarios -->
-  <div *ngIf="veterinarios.length === 0" class="empty-state">
-    <ion-icon name="paw" color="medium" class="empty-icon"></ion-icon>
-    <ion-text color="medium">
-      <h3>No hay veterinarios registrados</h3>
-      <p>Presiona el botón + para agregar uno nuevo</p>
-    </ion-text>
-  </div>
+  <!-- Segmento para días de la semana -->
+
+  <ion-segment [(ngModel)]="diaSeleccionado" (ionChange)="filtrarVeterinarios()">
+    <ion-segment-button *ngFor="let dia of diasSemana" [value]="dia">
+      <ion-label>{{ obtenerAbreviaturaDia(dia) }}</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <ng-container *ngIf="veterinarios.length > 0; else noVeterinariosRegistrados">
+
+    <!-- Mensaje cuando no hay veterinarios para el día seleccionado -->
+
+    <div *ngIf="veterinariosFiltrados.length === 0" class="empty-state ion-text-center ion-padding">
+      <ion-icon name="paw" color="medium" size="large"></ion-icon>
+      <ion-text color="medium">
+        <h3>No hay veterinarios trabajando el {{ diaSeleccionado }}</h3>
+        <p>Selecciona otro día o agrega un nuevo veterinario</p>
+      </ion-text>
+    </div>
+
+    <!-- Lista de veterinarios para el día seleccionado -->
+
+    <ion-list *ngIf="veterinariosFiltrados.length > 0">
+      <ion-item-sliding *ngFor="let vet of veterinariosFiltrados">
+        <ion-item>
+          <ion-avatar slot="start">
+            <img [src]="vet.foto || 'assets/images/default-avatar.png'" alt="Foto del veterinario"
+              (error)="vet.foto = 'assets/images/default-avatar.png'">
+          </ion-avatar>
+          <ion-label>
+            <h2>{{ vet.nombre }}</h2>
+            <p>{{ vet.especialidad }}</p>
+            <ion-badge [color]="vet.disponible ? 'success' : 'danger'">
+              {{ vet.disponible ? 'Disponible' : 'No disponible' }}
+            </ion-badge>
+          </ion-label>
+          <ion-toggle slot="end" [checked]="vet.disponible"
+            (ionChange)="actualizarDisponibilidad(vet.id, $event.detail.checked)"></ion-toggle>
+        </ion-item>
+        <ion-item-options side="end">
+          <ion-item-option color="warning" (click)="abrirModalEdicion(vet)">
+            <ion-icon name="pencil" slot="icon-only"></ion-icon>
+          </ion-item-option>
+          <ion-item-option color="danger" (click)="confirmarEliminacion(vet)">
+            <ion-icon name="trash" slot="icon-only"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
+    </ion-list>
+  </ng-container>
+
+  <!-- Mensaje cuando no hay ningún veterinario registrado -->
+
+  <ng-template #noVeterinariosRegistrados>
+    <div class="empty-state ion-text-center ion-padding">
+      <ion-icon name="paw" color="medium" size="large"></ion-icon>
+      <ion-text color="medium">
+        <h3>No hay veterinarios registrados</h3>
+        <p>Presiona el botón + para agregar uno nuevo</p>
+      </ion-text>
+    </div>
+  </ng-template>
 
   <!-- Botón flotante para agregar nuevo -->
+
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
     <ion-fab-button (click)="abrirModalCreacion()">
       <ion-icon name="add"></ion-icon>
@@ -61,6 +81,7 @@
   </ion-fab>
 
   <!-- Modal para agregar/editar veterinario -->
+
   <ion-modal [isOpen]="isModalOpen" (didDismiss)="cerrarModal()">
     <ng-template>
       <ion-header>
@@ -73,22 +94,30 @@
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
-      
+
       <ion-content class="ion-padding">
         <form (ngSubmit)="editMode ? actualizarVeterinario() : agregarVeterinario()">
+
           <!-- Nombre -->
+
           <ion-item>
             <ion-label position="floating">Nombre completo</ion-label>
             <ion-input [(ngModel)]="nuevoVeterinario.nombre" name="nombre" required></ion-input>
           </ion-item>
-          
-          <!-- Especialidad -->
+
+          <!-- Especialidad (nuevo select) -->
+
           <ion-item>
-            <ion-label position="floating">Especialidad</ion-label>
-            <ion-input [(ngModel)]="nuevoVeterinario.especialidad" name="especialidad" required></ion-input>
+            <ion-select aria-label="Especialidad" interface="action-sheet" placeholder="Seleccionar especialidad"
+              [(ngModel)]="nuevoVeterinario.especialidad" name="especialidad" required>
+              <ion-select-option *ngFor="let esp of especialidades" [value]="esp.nombre">
+                {{ esp.nombre }}
+              </ion-select-option>
+            </ion-select>
           </ion-item>
-          
+
           <!-- Foto -->
+
           <ion-item>
             <ion-avatar slot="start">
               <img [src]="nuevoVeterinario.foto || 'assets/images/default-avatar.png'" alt="Foto del veterinario">
@@ -99,28 +128,31 @@
               Tomar Foto
             </ion-button>
           </ion-item>
-          
+
           <!-- Días laborales -->
+
           <ion-list-header>
             <ion-label>Días laborales</ion-label>
           </ion-list-header>
-          
+
           <ion-item *ngFor="let dia of diasSemana">
             <ion-label>{{ dia }}</ion-label>
-            <ion-checkbox slot="end" [(ngModel)]="nuevoVeterinario.diasLaborales[dia]" 
-                         [ngModelOptions]="{standalone: true}"></ion-checkbox>
+            <ion-checkbox slot="end" [(ngModel)]="nuevoVeterinario.diasLaborales[dia]"
+              [ngModelOptions]="{standalone: true}"></ion-checkbox>
           </ion-item>
-          
+
           <!-- Disponibilidad -->
+
           <ion-item>
             <ion-label>Disponible actualmente</ion-label>
-            <ion-toggle slot="end" [(ngModel)]="nuevoVeterinario.disponible" 
-                       [ngModelOptions]="{standalone: true}"></ion-toggle>
+            <ion-toggle slot="end" [(ngModel)]="nuevoVeterinario.disponible"
+              [ngModelOptions]="{standalone: true}"></ion-toggle>
           </ion-item>
-          
+
           <!-- Botón de guardar -->
-          <ion-button expand="block" type="submit" [disabled]="!nuevoVeterinario.nombre || !nuevoVeterinario.especialidad"
-                     class="ion-margin-top">
+
+          <ion-button expand="block" type="submit"
+            [disabled]="!nuevoVeterinario.nombre || !nuevoVeterinario.especialidad" class="ion-margin-top">
             <ion-icon slot="start" [name]="editMode ? 'save' : 'add'"></ion-icon>
             {{ editMode ? 'Guardar cambios' : 'Agregar veterinario' }}
           </ion-button>
@@ -130,10 +162,13 @@
   </ion-modal>
 
   <!-- Action Sheet para seleccionar fuente de foto -->
-  <ion-action-sheet
-    [isOpen]="showActionSheet"
-    header="Seleccionar fuente de imagen"
-    [buttons]="actionSheetButtons"
+
+  <ion-action-sheet [isOpen]="showActionSheet" header="Seleccionar fuente de imagen" [buttons]="actionSheetButtons"
     (didDismiss)="showActionSheet = false">
   </ion-action-sheet>
+  <ion-fab vertical="bottom" horizontal="start" slot="fixed">
+    <ion-fab-button (click)="abrirModalEspecialidades()">
+      <ion-icon name="medical"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
 </ion-content>
