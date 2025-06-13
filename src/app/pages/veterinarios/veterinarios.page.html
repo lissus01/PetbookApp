@@ -3,7 +3,8 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
-    <ion-title>Gestión de Veterinarios</ion-title>
+    <ion-title *ngIf="userRole === 'owner'" >Veterinarios</ion-title>
+    <ion-title *ngIf="userRole === 'admin'" >Gestion de Veterinarios</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -22,12 +23,21 @@
     <!-- Mensaje cuando no hay veterinarios para el día seleccionado -->
 
     <div *ngIf="veterinariosFiltrados.length === 0" class="empty-state ion-text-center ion-padding">
-      <ion-icon name="paw" color="medium" size="large"></ion-icon>
-      <ion-text color="medium">
+      <ion-icon name="paw" color="medium" size="large" *ngIf="userRole === 'admin'"></ion-icon >
+      <ion-text color="medium" *ngIf="userRole === 'admin'">
         <h3>No hay veterinarios trabajando el {{ diaSeleccionado }}</h3>
         <p>Selecciona otro día o agrega un nuevo veterinario</p>
       </ion-text>
     </div>
+    
+    <div *ngIf="veterinariosFiltrados.length === 0" class="empty-state ion-text-center ion-padding">
+      <ion-icon name="paw" color="medium" size="large" *ngIf="userRole === 'owner'" ></ion-icon>
+      <ion-text color="medium" *ngIf="userRole === 'owner'">
+        <h3>No hay veterinarios trabajando el {{ diaSeleccionado }}</h3>
+        <p>Selecciona otro día</p>
+      </ion-text>
+    </div>
+
 
     <!-- Lista de veterinarios para el día seleccionado -->
 
@@ -35,8 +45,8 @@
       <ion-item-sliding *ngFor="let vet of veterinariosFiltrados">
         <ion-item>
           <ion-avatar slot="start">
-            <img [src]="vet.foto || 'assets/images/default-avatar.png'" alt="Foto del veterinario"
-              (error)="vet.foto = 'assets/images/default-avatar.png'">
+            <img [src]="vet.foto || 'https://ionicframework.com/docs/img/demos/thumbnail.svg'"
+              alt="Foto del veterinario" (error)="vet.foto = 'https://ionicframework.com/docs/img/demos/thumbnail.svg'">
           </ion-avatar>
           <ion-label>
             <h2>{{ vet.nombre }}</h2>
@@ -46,9 +56,10 @@
             </ion-badge>
           </ion-label>
           <ion-toggle slot="end" [checked]="vet.disponible"
-            (ionChange)="actualizarDisponibilidad(vet.id, $event.detail.checked)"></ion-toggle>
+            (ionChange)="actualizarDisponibilidad(vet.id, $event.detail.checked)"
+            *ngIf="userRole === 'admin'"></ion-toggle>
         </ion-item>
-        <ion-item-options side="end">
+        <ion-item-options side="end" *ngIf="userRole === 'admin'">
           <ion-item-option color="warning" (click)="abrirModalEdicion(vet)">
             <ion-icon name="pencil" slot="icon-only"></ion-icon>
           </ion-item-option>
@@ -63,7 +74,7 @@
   <!-- Mensaje cuando no hay ningún veterinario registrado -->
 
   <ng-template #noVeterinariosRegistrados>
-    <div class="empty-state ion-text-center ion-padding">
+    <div class="empty-state ion-text-center ion-padding" *ngIf="userRole === 'admin'">
       <ion-icon name="paw" color="medium" size="large"></ion-icon>
       <ion-text color="medium">
         <h3>No hay veterinarios registrados</h3>
@@ -74,7 +85,7 @@
 
   <!-- Botón flotante para agregar nuevo -->
 
-  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="userRole === 'admin'">
     <ion-fab-button (click)="abrirModalCreacion()">
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
@@ -120,7 +131,8 @@
 
           <ion-item>
             <ion-avatar slot="start">
-              <img [src]="nuevoVeterinario.foto || 'assets/images/default-avatar.png'" alt="Foto del veterinario">
+              <img [src]="nuevoVeterinario.foto || 'https://ionicframework.com/docs/img/demos/thumbnail.svg'"
+                alt="Foto del veterinario">
             </ion-avatar>
             <ion-label>Foto de perfil</ion-label>
             <ion-button fill="clear" (click)="seleccionarFuenteFoto()">
@@ -166,7 +178,7 @@
   <ion-action-sheet [isOpen]="showActionSheet" header="Seleccionar fuente de imagen" [buttons]="actionSheetButtons"
     (didDismiss)="showActionSheet = false">
   </ion-action-sheet>
-  <ion-fab vertical="bottom" horizontal="start" slot="fixed">
+  <ion-fab vertical="bottom" horizontal="start" slot="fixed" *ngIf="userRole === 'admin'">
     <ion-fab-button (click)="abrirModalEspecialidades()">
       <ion-icon name="medical"></ion-icon>
     </ion-fab-button>

@@ -6,7 +6,7 @@ import { AlertController, LoadingController } from '@ionic/angular/standalone';
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonCard, 
   IonCardHeader, IonCardTitle, IonCardContent, IonItem, 
-  IonLabel, IonInput, IonButton, IonButtons, IonBackButton
+  IonLabel, IonInput, IonButton, IonButtons, IonBackButton,
 } from '@ionic/angular/standalone';
 import { AuthService } from '../../services/auth.service';
 
@@ -20,7 +20,7 @@ import { AuthService } from '../../services/auth.service';
     ReactiveFormsModule,
     IonHeader, IonToolbar, IonTitle, IonContent, IonCard,
     IonCardHeader, IonCardTitle, IonCardContent, IonItem,
-    IonLabel, IonInput, IonButton, IonButtons, IonBackButton
+    IonLabel, IonInput, IonButton, IonButtons, IonBackButton,
   ]
 })
 export class LoginPage {

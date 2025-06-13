@@ -142,6 +142,7 @@ export class SpeciesBreedManagementComponent {
     } catch (error) {
       console.error('Error adding breed:', error);
     }
+    this.modalCtrl.dismiss({ reload: true });
   }
 
   async loadBreeds() {

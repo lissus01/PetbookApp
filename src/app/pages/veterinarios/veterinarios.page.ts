@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule, ToastController, AlertController, LoadingController, ModalController } from '@ionic/angular';
-import { Firestore, collection, collectionData, doc, addDoc, updateDoc, deleteDoc } from '@angular/fire/firestore';
+import { IonicModule, ToastController, AlertController, LoadingController, ModalController,  } from '@ionic/angular';
+import { Firestore, collection, collectionData, doc, addDoc, updateDoc, deleteDoc,getDoc, getFirestore } from '@angular/fire/firestore';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Storage, ref, uploadBytes, getDownloadURL } from '@angular/fire/storage';
 import { FormsModule } from '@angular/forms';
@@ -10,21 +10,28 @@ import { Directory, Filesystem } from '@capacitor/filesystem';
 import { addIcons } from 'ionicons';
 import { add, camera, close, medical, paw, pencil, save, trash } from 'ionicons/icons';
 import { EspecialidadesModalComponent } from 'src/app/components/especialidades-modal/especialidades-modal.component';
+import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-veterinarios',
   templateUrl: './veterinarios.page.html',
   styleUrls: ['./veterinarios.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule,]
+  imports: [IonicModule, CommonModule, FormsModule, ]
 })
 
 export class VeterinariosPage {
+
   constructor(private alertController: AlertController, private toastController: ToastController, private loadingController: LoadingController, private modalCtrl: ModalController,
   ) {
     addIcons({ medical, pencil, trash, paw, add, close, camera, save });
     this.loadVeterinarios();
 
   }
+  userEmail: string | null = null;
+  userRole: string | null = null;
+  userName: string | null = null;
+  private authService = inject(AuthService);
+
   diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes',];
   diaSeleccionado: string = this.diasSemana[0]; // Día inicial seleccionado
   veterinariosFiltrados: any[] = []
@@ -51,6 +58,26 @@ export class VeterinariosPage {
 
   async ngOnInit() {
     await this.loadEspecialidades(); // Cargar especialidades al iniciar
+    const user = this.authService.getCurrentUser();
+      if (user) {
+        this.userEmail = user.email;
+  
+      }
+      if (user) {
+        if (user) {
+          const db = getFirestore();
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          this.userRole = userDoc.data()?.['role'] || null;
+        }
+      }
+      if (user) {
+        if (user) {
+          const db = getFirestore();
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          this.userName = userDoc.data()?.['name'] || null;
+        }
+      }
+    
   }
 
   async loadEspecialidades() {
