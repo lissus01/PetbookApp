@@ -4,7 +4,7 @@
 
 export const environment = {
   production: false,
-  firebase:{Add commentMore actions
+  firebase:{
     apiKey: "AIzaSyDurYGOznIC6MGQne1fbId547U5XUfeKmc",
     authDomain: "petbook-6d12d.firebaseapp.com",
     projectId: "petbook-6d12d",
