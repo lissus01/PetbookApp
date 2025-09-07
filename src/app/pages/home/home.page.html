@@ -7,15 +7,29 @@
 
   <ion-content class="ion-padding">
     <ion-list>
-      <ion-item routerLink="/perfil" routerDirection="forward">
+      <ion-item *ngIf="userRole === 'owner'" routerLink="/perfil" routerDirection="forward">
         Perfil
       </ion-item>
-      <ion-item routerLink="/petfile" routerDirection="forward">
+      <ion-item *ngIf="userRole === 'owner'" routerLink="/petfile" routerDirection="forward">
         Ficha Mascota
       </ion-item>
-      <ion-item routerLink="/calendar" routerDirection="forward">
+      <ion-item *ngIf="userRole === 'owner'" routerLink="/calendar" routerDirection="forward">
         Calendario
       </ion-item>
+
+      <ion-item routerLink="/veterinarios" routerDirection="forward">
+        Veterinarios
+      </ion-item>
+      
+      <ion-item *ngIf="userRole === 'admin'" routerLink="/gestion-mascota" routerDirection="forward">
+        Gestion Mascotas
+      </ion-item>
+      
+
+      <ion-item *ngIf="userRole === 'owner'" routerLink="/chatbot" routerDirection="forward">
+        Chatbot
+      </ion-item>
+
       <ion-item (click)="logout()">
         Cerrar sesión
       </ion-item>

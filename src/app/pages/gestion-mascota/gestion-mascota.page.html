@@ -1,0 +1,35 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Gestion Mascotas</ion-title>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  
+  <ion-segment>
+    <ion-segment-button value="especies">
+      <ion-label>Especies/Razas</ion-label>
+    </ion-segment-button>
+        <ion-segment-button value="mascotas">
+      <ion-label>Mascotas</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+   <ion-list>
+    <ion-list-header>Especies Existentes</ion-list-header>
+    <ion-item *ngFor="let specie of species">
+      <ion-label>{{specie.name}}</ion-label>
+      <ion-button fill="clear" color="danger" (click)="deleteSpecies(specie.id)">
+        <ion-icon name="trash" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-item>
+  </ion-list>
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-button (click)="openSpeciesBreedManagement()">
+      <ion-icon slot="icon-only" name="add"></ion-icon>
+    </ion-button>
+  </ion-fab>
+</ion-content>

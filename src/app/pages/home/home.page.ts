@@ -1,15 +1,15 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { 
-  IonHeader, IonToolbar, IonTitle, IonContent, 
-  IonButtons, IonButton, IonCard, IonCardHeader, 
-  IonCardTitle, IonCardContent, IonIcon, IonMenu, IonMenuButton , IonItem, IonList
+import {
+  IonHeader, IonToolbar, IonTitle, IonContent, IonButtons,
+  IonMenuButton, IonItem, IonList, IonMenu
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { logOutOutline, personCircleOutline } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
+import { doc, getDoc, getFirestore } from 'firebase/firestore';
 
 @Component({
   selector: 'app-home',
@@ -17,15 +17,15 @@ import { RouterModule } from '@angular/router';
   styleUrls: ['./home.page.scss'],
   standalone: true,
   imports: [
-    CommonModule,RouterModule,
+    CommonModule, RouterModule,
     IonHeader, IonToolbar, IonTitle, IonContent,
-    IonButtons, IonButton, IonCard, IonCardHeader,
-    IonCardTitle, IonCardContent, IonIcon, IonMenu, IonMenuButton, IonItem, IonList
+    IonButtons, IonMenu, IonMenuButton, IonItem, IonList
   ]
 })
 export class HomePage implements OnInit {
   userEmail: string | null = null;
-  
+  userRole: string | null = null;
+  userName: string | null = null;
   private authService = inject(AuthService);
   private router = inject(Router);
 
@@ -33,12 +33,17 @@ export class HomePage implements OnInit {
     addIcons({ logOutOutline, personCircleOutline });
   }
 
-  ngOnInit() {
-    const user = this.authService.getCurrentUser();
-    if (user) {
-      this.userEmail = user.email;
-    }
+async ngOnInit() {
+  const user = this.authService.getCurrentUser();
+  if (user) {
+    this.userEmail = user.email;
+    
+    const db = getFirestore();
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    this.userRole = userDoc.data()?.['role'] || null;
+    this.userName = userDoc.data()?.['name'] || null;
   }
+}
 
   async logout() {
     try {

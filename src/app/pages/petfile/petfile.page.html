@@ -1,10 +1,12 @@
 <ion-header>
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    
     <ion-title>Mis Mascotas</ion-title>
     <ion-buttons slot="end">
       <ion-button *ngIf="!showPetDetail" (click)="openPetForm()">
-        <!-- Añade esto temporalmente para debugging -->
-        <p>+</p>
         <ion-icon slot="icon-only" name="add"></ion-icon>
       </ion-button>
       <ion-button *ngIf="showPetDetail" (click)="closePetDetail()">
@@ -22,7 +24,7 @@
       <h2>No tienes mascotas registradas</h2>
       <p>¡Agrega tu primera mascota haciendo clic en el botón +!</p>
     </div>
-    
+
     <ion-grid *ngIf="pets.length > 0">
       <ion-row>
         <ion-col size="6" *ngFor="let pet of pets">
@@ -36,7 +38,8 @@
               <ion-card-subtitle *ngIf="pet.nickname">{{pet.nickname}}</ion-card-subtitle>
             </ion-card-header>
             <ion-card-content>
-              <p>{{pet.breed}}</p>
+              <p>{{getSpeciesName(pet.species)}}</p>
+              <p>{{getBreedName(pet.breed)}}</p>
               <p>{{pet.age}} años</p>
             </ion-card-content>
           </ion-card>
@@ -52,17 +55,21 @@
         <img *ngIf="selectedPet.photoUrl" [src]="selectedPet.photoUrl" alt="{{selectedPet.name}}">
         <ion-icon *ngIf="!selectedPet.photoUrl" name="paw" class="default-pet-image-detail"></ion-icon>
       </div>
-      
+
       <ion-card-header>
         <ion-card-title>{{selectedPet.name}}</ion-card-title>
         <ion-card-subtitle *ngIf="selectedPet.nickname">{{selectedPet.nickname}}</ion-card-subtitle>
       </ion-card-header>
-      
+
       <ion-card-content>
         <ion-list>
           <ion-item>
+            <ion-label>Especie</ion-label>
+            <ion-note slot="end">{{getSpeciesName(selectedPet.species)}}</ion-note>
+          </ion-item>
+          <ion-item>
             <ion-label>Raza</ion-label>
-            <ion-note slot="end">{{selectedPet.breed}}</ion-note>
+            <ion-note slot="end">{{getBreedName(selectedPet.breed)}}</ion-note>
           </ion-item>
           <ion-item>
             <ion-label>Edad</ion-label>
@@ -77,7 +84,7 @@
             <ion-note slot="end">{{selectedPet.chipId}}</ion-note>
           </ion-item>
         </ion-list>
-        
+
         <div class="action-buttons">
           <ion-button expand="block" (click)="openPetForm(selectedPet)">
             <ion-icon name="create" slot="start"></ion-icon>
@@ -101,12 +108,12 @@
     <ion-note color="danger" *ngIf="petForm.get('name')?.invalid && petForm.get('name')?.touched">
       El nombre es obligatorio
     </ion-note>
-    
+
     <ion-item>
       <ion-label position="floating">Apodo</ion-label>
       <ion-input formControlName="nickname" type="text"></ion-input>
     </ion-item>
-    
+
     <ion-item>
       <ion-label position="floating">Edad (años) *</ion-label>
       <ion-input formControlName="age" type="number" required></ion-input>
@@ -114,15 +121,33 @@
     <ion-note color="danger" *ngIf="petForm.get('age')?.invalid && petForm.get('age')?.touched">
       La edad debe ser entre 0 y 30 años
     </ion-note>
-    
+
     <ion-item>
-      <ion-label position="floating">Raza *</ion-label>
-      <ion-input formControlName="breed" type="text" required></ion-input>
+      <ion-label>Especie *</ion-label>
+      <ion-select formControlName="species" interface="action-sheet" placeholder="Seleccionar especie"
+        (ionChange)="filterBreedsBySpecies($event.detail.value)" required>
+        <ion-select-option *ngFor="let specie of species" [value]="specie.id">
+          {{specie.name}}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+    <ion-note color="danger" *ngIf="petForm.get('species')?.invalid && petForm.get('species')?.touched">
+      La especie es obligatoria
+    </ion-note>
+
+    <ion-item>
+      <ion-label>Raza *</ion-label>
+      <ion-select formControlName="breed" interface="action-sheet" placeholder="Seleccionar raza" required
+        [disabled]="!petForm.get('species')?.value">
+        <ion-select-option *ngFor="let breed of filteredBreeds" [value]="breed.id">
+          {{breed.name}}
+        </ion-select-option>
+      </ion-select>
     </ion-item>
     <ion-note color="danger" *ngIf="petForm.get('breed')?.invalid && petForm.get('breed')?.touched">
       La raza es obligatoria
     </ion-note>
-    
+
     <ion-item>
       <ion-label position="floating">Peso (kg) *</ion-label>
       <ion-input formControlName="weight" type="number" required></ion-input>
@@ -130,12 +155,12 @@
     <ion-note color="danger" *ngIf="petForm.get('weight')?.invalid && petForm.get('weight')?.touched">
       El peso debe ser entre 0 y 100 kg
     </ion-note>
-    
+
     <ion-item>
       <ion-label position="floating">Nº de Chip</ion-label>
       <ion-input formControlName="chipId" type="text"></ion-input>
     </ion-item>
-    
+
     <div class="photo-container">
       <div class="photo-preview" (click)="takePicture()">
         <img *ngIf="selectedPhoto" [src]="selectedPhoto" alt="Pet Photo">
@@ -145,7 +170,7 @@
         </div>
       </div>
     </div>
-    
+
     <div class="form-buttons">
       <ion-button expand="block" type="submit" [disabled]="petForm.invalid">
         {{ isEditing ? 'Actualizar' : 'Guardar' }}

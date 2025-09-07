@@ -1,4 +1,3 @@
-// src/app/pages/register/register.page.ts
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -10,6 +9,7 @@ import {
   IonLabel, IonInput, IonButton, IonButtons, IonBackButton
 } from '@ionic/angular/standalone';
 import { AuthService } from '../../services/auth.service';
+import { Firestore, doc, setDoc } from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-register',
@@ -32,12 +32,15 @@ export class RegisterPage {
   private loadingController = inject(LoadingController);
   private alertController = inject(AlertController);
   private router = inject(Router);
+  private firestore: Firestore = inject(Firestore);
   
   constructor() {
     this.registerForm = this.fb.group({
+      name: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]]
+      confirmPassword: ['', [Validators.required]],
+      role: ['owner'] // Rol por defecto
     }, { 
       validators: this.passwordMatchValidator
     });
@@ -64,8 +67,22 @@ export class RegisterPage {
       await loading.present();
 
       try {
-        const { email, password } = this.registerForm.value;
-        await this.authService.register(email, password);
+        const { email, password, name, role } = this.registerForm.value;
+        
+        // Registrar usuario en Firebase Auth
+        const userCredential = await this.authService.register(email, password);
+        const user = userCredential.user;
+        
+        // Guardar información adicional en Firestore
+        const userDocRef = doc(this.firestore, `users/${user.uid}`);
+        await setDoc(userDocRef, {
+          uid: user.uid,
+          name: name,
+          email: email,
+          role: role,
+          createdAt: new Date()
+        });
+
         loading.dismiss();
         
         const alert = await this.alertController.create({

@@ -1,0 +1,12 @@
+.text-secondary {
+  color: var(--ion-color-medium);
+  font-style: italic;
+}
+
+ion-textarea {
+  min-height: 100px;
+}
+
+ion-content {
+  --background: var(--ion-color-light);
+}

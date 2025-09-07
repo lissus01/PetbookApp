@@ -1,4 +1,3 @@
-// src/app/pages/login/login.page.ts
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -7,24 +6,26 @@ import { AlertController, LoadingController } from '@ionic/angular/standalone';
 import { 
   IonHeader, IonToolbar, IonTitle, IonContent, IonCard, 
   IonCardHeader, IonCardTitle, IonCardContent, IonItem, 
-  IonLabel, IonInput, IonButton, IonButtons, IonBackButton
+  IonLabel, IonInput, IonButton, IonButtons, IonBackButton,
 } from '@ionic/angular/standalone';
 import { AuthService } from '../../services/auth.service';
+
 @Component({
   selector: 'app-login',
   templateUrl: './login.page.html',
   styleUrls: ['./login.page.scss'],
   standalone: true,
   imports: [
-    CommonModule, 
+    CommonModule,
     ReactiveFormsModule,
     IonHeader, IonToolbar, IonTitle, IonContent, IonCard,
     IonCardHeader, IonCardTitle, IonCardContent, IonItem,
-    IonLabel, IonInput, IonButton, IonButtons, IonBackButton
+    IonLabel, IonInput, IonButton, IonButtons, IonBackButton,
   ]
 })
 export class LoginPage {
   loginForm: FormGroup;
+
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private loadingController = inject(LoadingController);
@@ -37,16 +38,19 @@ export class LoginPage {
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
   }
+
   async login() {
     if (this.loginForm.valid) {
       const loading = await this.loadingController.create({
         message: 'Iniciando sesión...',
       });
       await loading.present();
+
       try {
         const { email, password } = this.loginForm.value;
         await this.authService.login(email, password);
         loading.dismiss();
+        this.router.navigate(['/home']); // Ajusta la ruta según tu aplicación
       } catch (error: any) {
         loading.dismiss();
         const alert = await this.alertController.create({
@@ -61,22 +65,19 @@ export class LoginPage {
         header: 'Formulario inválido',
         message: 'Por favor, completa todos los campos correctamente.',
         buttons: ['OK']
-      });
+        });
       await alert.present();
     }
   }
-  goToRegister() {
-    this.router.navigate(['/register']);
-  }
+
   async forgotPassword() {
     const alert = await this.alertController.create({
-      header: 'Restablecer contraseña',
+      header: 'Recuperar contraseña',
       inputs: [
         {
           name: 'email',
           type: 'email',
-          placeholder: 'Ingresa tu correo electrónico',
-          value: this.loginForm.get('email')?.value || ''
+          placeholder: 'Correo electrónico'
         }
       ],
       buttons: [
@@ -87,40 +88,21 @@ export class LoginPage {
         {
           text: 'Enviar',
           handler: async (data) => {
-            if (!data.email || !data.email.includes('@')) {
-              const errorAlert = await this.alertController.create({
-                header: 'Error',
-                message: 'Por favor, introduce un correo electrónico válido.',
-                buttons: ['OK']
-              });
-              await errorAlert.present();
-              return false;
-            }
-            
-            const loading = await this.loadingController.create({
-              message: 'Enviando instrucciones...',
-            });
-            await loading.present();
-            
             try {
               await this.authService.resetPassword(data.email);
-              loading.dismiss();
               const successAlert = await this.alertController.create({
-                header: 'Correo enviado',
-                message: `Se han enviado las instrucciones para restablecer tu contraseña a ${data.email}`,
+                header: 'Éxito',
+                message: 'Se ha enviado un correo para restablecer tu contraseña.',
                 buttons: ['OK']
               });
               await successAlert.present();
-              return true; // Agregamos un valor de retorno aquí
-            } catch (error: any) {
-              loading.dismiss();
+            } catch (error) {
               const errorAlert = await this.alertController.create({
                 header: 'Error',
-                message: this.getResetPasswordErrorMessage(error),
+                message: 'No se pudo enviar el correo de recuperación.',
                 buttons: ['OK']
               });
               await errorAlert.present();
-              return false; // Agregamos un valor de retorno aquí
             }
           }
         }
@@ -128,26 +110,20 @@ export class LoginPage {
     });
     await alert.present();
   }
-  private getResetPasswordErrorMessage(error: any): string {
-    switch (error.code) {
-      case 'auth/invalid-email':
-        return 'La dirección de correo electrónico no es válida.';
-      case 'auth/user-not-found':
-        return 'No hay usuario registrado con este correo electrónico.';
-      default:
-        return `Error: ${error.message}`;
-    }
+
+  goToRegister() {
+    this.router.navigate(['/register']);
   }
+
   private getErrorMessage(error: any): string {
     switch (error.code) {
       case 'auth/user-not-found':
-        return 'No hay ningún usuario registrado con este correo electrónico.';
       case 'auth/wrong-password':
-        return 'La contraseña es incorrecta.';
-      case 'auth/invalid-credential':
-        return 'Las credenciales proporcionadas son inválidas.';
+        return 'Correo o contraseña incorrectos.';
+      case 'auth/too-many-requests':
+        return 'Demasiados intentos fallidos. Intenta más tarde.';
       default:
-        return `Error: ${error.message}`;
+        return 'Ocurrió un error al iniciar sesión.';
     }
   }
 }

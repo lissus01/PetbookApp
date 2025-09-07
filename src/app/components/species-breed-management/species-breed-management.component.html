@@ -1,0 +1,50 @@
+<!-- species-breed-management.component.html -->
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Administrar Especies y Razas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="closeModal()">Cerrar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Sección para agregar especies -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Agregar Especie</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item>
+        <ion-input [(ngModel)]="newSpecies" placeholder="Nombre de la especie"></ion-input>
+      </ion-item>
+      <ion-button expand="block" (click)="addSpecies()">Agregar Especie</ion-button>
+      <ion-note color="danger" *ngIf="speciesError">{{speciesError}}</ion-note>
+      <ion-note color="success" *ngIf="successMessage">{{successMessage}}</ion-note>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Sección para agregar razas -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Agregar Raza</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item>
+        <ion-select [(ngModel)]="selectedSpecies" placeholder="Seleccionar especie">
+          <ion-select-option *ngFor="let specie of species" [value]="specie.id">
+            {{specie.name}}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <ion-input [(ngModel)]="newBreed" placeholder="Nombre de la raza"></ion-input>
+      </ion-item>
+      <ion-button expand="block" (click)="addBreed()" [disabled]="!selectedSpecies || !newBreed.trim()">
+        Agregar Raza
+      </ion-button>
+      <ion-note color="danger" *ngIf="breedError">{{breedError}}</ion-note>
+      
+    </ion-card-content>
+  </ion-card>
+</ion-content>

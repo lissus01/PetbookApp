@@ -1,53 +1,62 @@
-<!-- src/app/pages/login/login.page.html -->
 <ion-header>
-  <ion-toolbar color="primary">
-    <ion-title>Iniciar Sesión</ion-title>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button></ion-back-button>
+    </ion-buttons>
+    <ion-title>Iniciar sesión</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
   <ion-card>
     <ion-card-header>
-      <ion-card-title class="ion-text-center">Bienvenido</ion-card-title>
+      <ion-card-title>Bienvenido</ion-card-title>
     </ion-card-header>
+
     <ion-card-content>
       <form [formGroup]="loginForm" (ngSubmit)="login()">
         <ion-item>
           <ion-label position="floating">Correo electrónico</ion-label>
-          <ion-input type="email" formControlName="email" required></ion-input>
+          <ion-input formControlName="email" type="email"></ion-input>
         </ion-item>
-        <div class="ion-padding-start" *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['required']">
-          <span class="error-message">El correo es obligatorio</span>
-        </div>
-        <div class="ion-padding-start" *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['email']">
-          <span class="error-message">Por favor, ingresa un correo válido</span>
-        </div>
+        @if (loginForm.get('email')?.touched && loginForm.get('email')?.errors) {
+          <div class="error-message ion-padding-start">
+            @if (loginForm.get('email')?.errors?.['required']) {
+              <span>El correo es requerido</span>
+            }
+            @if (loginForm.get('email')?.errors?.['email']) {
+              <span>Correo inválido</span>
+            }
+          </div>
+        }
 
         <ion-item>
           <ion-label position="floating">Contraseña</ion-label>
-          <ion-input type="password" formControlName="password" required></ion-input>
+          <ion-input formControlName="password" type="password"></ion-input>
         </ion-item>
-        <div class="ion-padding-start" *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['required']">
-          <span class="error-message">La contraseña es obligatoria</span>
-        </div>
-        <div class="ion-padding-start" *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['minlength']">
-          <span class="error-message">La contraseña debe tener al menos 6 caracteres</span>
-        </div>
+        @if (loginForm.get('password')?.touched && loginForm.get('password')?.errors) {
+          <div class="error-message ion-padding-start">
+            @if (loginForm.get('password')?.errors?.['required']) {
+              <span>La contraseña es requerida</span>
+            }
+            @if (loginForm.get('password')?.errors?.['minlength']) {
+              <span>Mínimo 6 caracteres</span>
+            }
+          </div>
+        }
 
-        <div class="ion-padding">
-          <ion-button expand="block" type="submit" [disabled]="!loginForm.valid">
-            Iniciar Sesión
-          </ion-button>
-        </div>
+        <ion-button expand="block" type="submit" [disabled]="!loginForm.valid">
+          Iniciar sesión
+        </ion-button>
       </form>
 
-      <div class="ion-text-center">
+      <div class="ion-text-center ion-margin-top">
         <ion-button fill="clear" size="small" (click)="forgotPassword()">
           ¿Olvidaste tu contraseña?
         </ion-button>
       </div>
 
-      <div class="ion-text-center ion-padding-top">
+      <div class="ion-text-center ion-margin-top">
         <p>¿No tienes una cuenta?</p>
         <ion-button fill="clear" (click)="goToRegister()">
           Regístrate aquí
